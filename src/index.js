@@ -5,7 +5,7 @@ import dotenv from "dotenv"
 dotenv.config({path:"/.env"})
 
 db_connect()
-.then((res)=>{
+.then(()=>{
     console.log("Database connection successful!")
     app.listen(process.env.PORT,(req,res)=>{
         console.log(`App is listening on port ${process.env.PORT}`)
