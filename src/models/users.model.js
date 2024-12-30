@@ -24,7 +24,8 @@ const userSchema = new mongoose.Schema({
     enum: ["Artist","User","Organization"]
    },
    artField:{
-    type: String 
+    type: String,
+    required: true 
    },
    username:{
     type: String,
