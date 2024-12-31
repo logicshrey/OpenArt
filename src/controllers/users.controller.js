@@ -93,7 +93,7 @@ const register = asyncHandler( async (req,res) => {
     }
 
     res
-    .statusCode(201)
+    .status(201)
     .json(new ApiResponse(200,createdUser,"User Register Successfully!"))
     
 })
@@ -127,7 +127,7 @@ const login = asyncHandler( async (req,res) => {
    const updatedUser = await User.findById(user._id).select("-password")
 
    res
-   .statusCode(200)
+   .status(200)
    .cookie("accessToken",accessToken,cookieOptions)
    .cookie("refreshToken",refreshToken,cookieOptions)
    .json(new ApiResponse(200,updatedUser,"User Logged In Successfully!"))
@@ -147,7 +147,7 @@ const logout = asyncHandler( async(req,res) => {
    }
 
    res
-   .statusCode(200)
+   .status(200)
    .clearCookie("accessToken",cookieOptions)
    .clearCookie("refreshToken",cookieOptions)
    .json(new ApiResponse(200,{},"User Logged Out Successfully!"))
@@ -180,7 +180,7 @@ const updateUserDetails = asyncHandler( async(req,res) => {
    }
 
    req
-   .statusCode(200)
+   .status(200)
    .json(new ApiResponse(200,user,"User details updated successfully!"))
 
 } )
@@ -211,7 +211,7 @@ const updateAvatar = asyncHandler( async(req,res) => {
    user.save({validateBeforeSave:false})
    
    res
-   .statusCode(200)
+   .status(200)
    .json(new ApiResponse(200,{},"Avatar updated successfully!"))
 
 } )
@@ -242,7 +242,7 @@ const updateCoverImage = asyncHandler( async(req,res) => {
    user.save({validateBeforeSave:false})
    
    res
-   .statusCode(200)
+   .status(200)
    .json(new ApiResponse(200,{},"coverImage updated successfully!"))
 
 } )
@@ -271,7 +271,7 @@ const changePassword = asyncHandler( async(req,res) => {
    user.save({validateBeforeSave:false})
 
    res
-   .statusCode(200)
+   .status(200)
    .json(new ApiResponse(200,{},"Password Changed Successfully!"))
 
 } )
@@ -298,7 +298,7 @@ const changeAccountType = asyncHandler( async(req,res) => {
    }
 
    res
-   .statusCode(200)
+   .status(200)
    .json(new ApiResponse(200,user,"Account type changed successfully!"))
 
 } )
@@ -328,7 +328,7 @@ const updateContentChoice = asyncHandler( async(req,res) => {
    }
 
    res
-   .statusCode(200)
+   .status(200)
    .json(new ApiResponse(200,user,"Content Choice updated successfully!"))
    
 } ) 
@@ -356,7 +356,7 @@ const refreshAccessToken = asyncHandler( async(req,res) => {
    const { accessToken,refreshToken } = await generateAccessAndRefreshTokens(user._id)
 
    res
-   .statusCode(200)
+   .status(200)
    .cookie("accessToken",accessToken,cookieOptions)
    .cookie("refreshToken",refreshToken,cookieOptions)
    .json(new ApiResponse(200,{},"Access Token Refreshed Successfully!"))
@@ -372,7 +372,7 @@ const deleteAccount = asyncHandler( async(req,res) => {
    }
 
    res
-   .statusCode(200)
+   .status(200)
    .clearCookie("accessToken",cookieOptions)
    .clearCookie("refreshToken",cookieOptions)
    .json(new ApiResponse(200,user,"User account deleted successfully!")) 
@@ -464,7 +464,7 @@ const getAccountDetails = asyncHandler( async(req,res) => {
    }
 
    req
-   .statusCode(200)
+   .status(200)
    .json(new ApiResponse(200,userAccount[0],"User details fetched successfully!"))
 } )
 
@@ -519,7 +519,7 @@ const getSavedArtworks = asyncHandler( async(req,res) => {
    }
 
    res
-   .statusCode(200)
+   .status(200)
    .json(new ApiResponse(200,savedArtworks[0],"savedArtworks"))
 
 } )

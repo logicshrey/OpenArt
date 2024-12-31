@@ -1,5 +1,5 @@
 import { Router } from "express";
-import upload from "../middlewares/multer.middleware.js"
+import {upload} from "../middlewares/multer.middleware.js"
 import { changeAccountType, changePassword, deleteAccount, getAccountDetails, getSavedArtworks, login, logout, refreshAccessToken, register, updateAvatar, updateContentChoice, updateCoverImage, updateUserDetails } from "../controllers/users.controller.js";
 import { verifyJwt } from "../middlewares/verifyJwt.middlewares.js"
 
