@@ -18,9 +18,11 @@ var corsOptions = {
   // Routes Import
 
 import userRouter from "./routes/users.routes.js"
+import artworkRouter from "./routes/artworks.routes.js"
 
 // Routes Activation
 
 app.use("/openart/api/users",userRouter)
+app.use("/openart/api/artworks",artworkRouter)
 
 export { app }
