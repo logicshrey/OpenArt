@@ -5,6 +5,8 @@ import { ApiResponse } from "../utils/apiResponse.js"
 import { uploadOnCloudinary, destroyOnCloudinary } from "../utils/cloudinary.js"
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";  
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken"
+
 
 const cookieOptions = {
    httpOnly: true,
@@ -173,13 +175,13 @@ const updateUserDetails = asyncHandler( async(req,res) => {
       }
    },{
       new:true
-   }).select("-password refreshToken")
+   }).select("-password -refreshToken")
 
    if(!user){
       throw new ApiError(500,"Something went wrong while updating user details!")
    }
 
-   req
+   res
    .status(200)
    .json(new ApiResponse(200,user,"User details updated successfully!"))
 
@@ -290,7 +292,7 @@ const changeAccountType = asyncHandler( async(req,res) => {
          artField
       }
    },{
-      new:type
+      new:true
    }).select("-password -refreshToken")
 
    if(!user){
@@ -311,7 +313,7 @@ const updateContentChoice = asyncHandler( async(req,res) => {
       throw new ApiError(400,"Content Choice is Required!")
    }
 
-   if(newContentChoice.length() === 0){
+   if(newContentChoice.length === 0){
       throw new ApiError(400,"Content Choice is Empty!")
    }
 
@@ -341,7 +343,7 @@ const refreshAccessToken = asyncHandler( async(req,res) => {
       throw new ApiError(400,"Refresh token not found!")
    }
 
-   const decodedToken = jwt.verify(incomingRefreshToken)
+   const decodedToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
    
    const user = await User.findById(decodedToken?._id)
 
@@ -463,7 +465,7 @@ const getAccountDetails = asyncHandler( async(req,res) => {
       throw new ApiError(500,"Something went wrong while fetching user details!")
    }
 
-   req
+   res
    .status(200)
    .json(new ApiResponse(200,userAccount[0],"User details fetched successfully!"))
 } )
@@ -520,7 +522,119 @@ const getSavedArtworks = asyncHandler( async(req,res) => {
 
    res
    .status(200)
-   .json(new ApiResponse(200,savedArtworks[0],"savedArtworks"))
+   .json(new ApiResponse(200,savedArtworks[0],"savedArtworks fetched successfully!"))
+
+} )
+
+const getSavedArtblogs = asyncHandler( async(req,res) => {
+
+   const savedArtblogs = await User.aggregate([
+      {
+         $match:{
+            _id: new mongoose.Types.ObjectId(req.user?._id)
+         }
+      },
+      {
+         $lookup:{
+            from:"savedartblogs",
+            localField:"_id",
+            foreignField:"owner",
+            as:"savedArtblogs",
+
+            pipeline:[
+               {
+                  $lookup:{
+                     from:"artblogs",
+                     localField:"artblog",
+                     foreignField:"_id",
+                     as:"artblog"
+                  }
+               },
+               {
+                  $addFields:{
+                     artblog:{
+                        $first: "$artblog"
+                     }
+                  }
+               },
+               {
+                  $project:{
+                     artblog:1   
+                  }
+               }
+            ]
+         } 
+      },
+      {
+         $project:{
+            savedArtblogs:1
+         }
+      }
+   ])
+
+   if(!savedArtblogs){
+      throw new ApiError(500,"Something went wrong while fetching saved artblogs!")
+   }
+
+   res
+   .status(200)
+   .json(new ApiResponse(200,savedArtblogs[0],"savedArtblogs fetched successfully!"))
+
+} )
+
+const getSavedAnnouncements = asyncHandler( async(req,res) => {
+
+   const savedAnnouncements = await User.aggregate([
+      {
+         $match:{
+            _id: new mongoose.Types.ObjectId(req.user?._id)
+         }
+      },
+      {
+         $lookup:{
+            from:"savedannouncements",
+            localField:"_id",
+            foreignField:"owner",
+            as:"savedAnnouncements",
+
+            pipeline:[
+               {
+                  $lookup:{
+                     from:"announcements",
+                     localField:"announcement",
+                     foreignField:"_id",
+                     as:"announcement"
+                  }
+               },
+               {
+                  $addFields:{
+                     announcement:{
+                        $first: "$announcement"
+                     }
+                  }
+               },
+               {
+                  $project:{
+                     announcement:1   
+                  }
+               }
+            ]
+         } 
+      },
+      {
+         $project:{
+            savedAnnouncements:1
+         }
+      }
+   ])
+
+   if(!savedAnnouncements){
+      throw new ApiError(500,"Something went wrong while fetching saved announcements!")
+   }
+
+   res
+   .status(200)
+   .json(new ApiResponse(200,savedAnnouncements[0],"savedAnnouncements fetched successfully!"))
 
 } )
 
@@ -537,5 +651,7 @@ export {
    refreshAccessToken,
    deleteAccount,
    getAccountDetails,
-   getSavedArtworks 
+   getSavedArtworks,
+   getSavedArtblogs,
+   getSavedAnnouncements 
 }

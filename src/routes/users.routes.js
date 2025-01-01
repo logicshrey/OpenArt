@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {upload} from "../middlewares/multer.middleware.js"
-import { changeAccountType, changePassword, deleteAccount, getAccountDetails, getSavedArtworks, login, logout, refreshAccessToken, register, updateAvatar, updateContentChoice, updateCoverImage, updateUserDetails } from "../controllers/users.controller.js";
+import { changeAccountType, changePassword, deleteAccount, getAccountDetails, getSavedAnnouncements, getSavedArtblogs, getSavedArtworks, login, logout, refreshAccessToken, register, updateAvatar, updateContentChoice, updateCoverImage, updateUserDetails } from "../controllers/users.controller.js";
 import { verifyJwt } from "../middlewares/verifyJwt.middlewares.js"
 
 const router = Router()
@@ -32,6 +32,8 @@ router.route("/refresh-access-token").post(refreshAccessToken)
 router.route("/delete-account").delete(verifyJwt,deleteAccount)
 router.route("/get-account-details").get(verifyJwt,getAccountDetails)
 router.route("/get-saved-artworks").get(verifyJwt,getSavedArtworks)
+router.route("/get-saved-artblogs").get(verifyJwt,getSavedArtblogs)
+router.route("/get-saved-announcements").get(verifyJwt,getSavedAnnouncements)
 
 
 export default router
