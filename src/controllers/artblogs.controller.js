@@ -19,7 +19,7 @@ const createArtblog = asyncHandler( async(req,res) => {
 
     const artblog = await Artblog.create({
         title,
-        description,
+        content,
         category,
         owner: req.user?._id
     })

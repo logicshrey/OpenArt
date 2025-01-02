@@ -1,5 +1,7 @@
 import { Router } from "express";
-import { verifyJwt } from "../middlewares/verifyJwt.middlewares.js"
+import { verifyJwt } from "../middlewares/verifyJwt.middlewares.js";
+import { createArtblog, deleteArtblog, editArtblog, getArtblog, getArtblogsByContentChoice } from "../controllers/artblogs.controller.js";
+
 
 const router = Router()
 
