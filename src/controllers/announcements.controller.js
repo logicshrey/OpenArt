@@ -1,4 +1,4 @@
-import { Artwork } from "../models/artworks.model.js"
+import { Announcement } from "../models/announcements.model.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiError } from "../utils/apiError.js"
 import { ApiResponse } from "../utils/apiResponse.js"
@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 import { User } from "../models/users.model.js"
 
 
-const createArtwork = asyncHandler( async(req,res) => {
+const createAnnouncement = asyncHandler( async(req,res) => {
 
     const { title,description,category } = req.body
 
@@ -17,41 +17,33 @@ const createArtwork = asyncHandler( async(req,res) => {
        throw new ApiError(400,"Required fields are missing!")
     }
 
-    const contentFileLocalPath = req.file?.path
+    const contentImageLocalPath = req.file?.path
 
-    if(!contentFileLocalPath){
-        throw new ApiError(400,"Content File is required!")
-    }
+    const contentImage = await uploadOnCloudinary(contentImageLocalPath)
 
-    const contentFile = await uploadOnCloudinary(contentFileLocalPath)
-
-    if(!contentFile){
-       throw new ApiError(500,"Something went wrong while uploading content file on cloudinary!")
-    }
-
-    const artwork = await Artwork.create({
+    const announcement = await Announcement.create({
         title,
         description,
         category,
-        contentFile: contentFile.url,
-        owner: req.user?._id
+        owner: req.user?._id,
+        image: contentImage?contentImage.url:null
     })
 
-    if(!artwork){
-        throw new ApiError(500,"Something went wrong while creating new artwork!")
+    if(!announcement){
+        throw new ApiError(500,"Something went wrong while creating new announcement!")
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,artwork,"New Artwork Created Successfully!"))
+    .json(new ApiResponse(201,announcement,"New Announcement Created Successfully!"))
 } )
 
-const editArtwork = asyncHandler( async(req,res) => {
+const editAnnouncement = asyncHandler( async(req,res) => {
 
-    const {artworkId} = req.params
+    const {announcementId} = req.params
     
-    if(!artworkId){
-        throw new ApiError(400,"Artwork Id is missing!")
+    if(!announcementId){
+        throw new ApiError(400,"Announcement Id is missing!")
     }
 
     const { title,description,category } = req.body
@@ -61,69 +53,80 @@ const editArtwork = asyncHandler( async(req,res) => {
      })){
         throw new ApiError(400,"Required fields are missing!")
      }
-    
-     const artwork = await Artwork.findByIdAndUpdate(artworkId,{
+     
+     const contentImageLocalPath = req.file?.path
+
+     const contentImage = await uploadOnCloudinary(contentImageLocalPath)
+     
+     const tempAnnouncement = await Announcement.findById(announcementId)
+
+     await destroyOnCloudinary(tempAnnouncement.image)
+
+     const announcement = await Announcement.findByIdAndUpdate(announcementId,{
         $set:{
             title,
             description,
-            category
+            category,
+            image: contentImage?contentImage.url:null
         }
      },
      {
         new:true
      })
 
-     if(!artwork){
-        throw new ApiError(404,"Artwork Not Found!")
+     if(!announcement){
+        throw new ApiError(404,"Announcement Not Found!")
      }
      
      res
-     .json(new ApiResponse(200,artwork,"Artwork Edited Successfully!"))
+     .json(new ApiResponse(200,announcement,"Announcement Edited Successfully!"))
 } )
 
-const deleteArtwork = asyncHandler( async(req,res) => {
+const deleteAnnouncement = asyncHandler( async(req,res) => {
     
-    const {artworkId} = req.params
+    const {announcementId} = req.params
     
-    if(!artworkId){
-        throw new ApiError(400,"Artwork Id is missing!")
+    if(!announcementId){
+        throw new ApiError(400,"Announcement Id is missing!")
     }
 
-    const artwork = await Artwork.findByIdAndDelete(artworkId)
+    const announcement = await Announcement.findByIdAndDelete(announcementId)
 
-    if(!artwork){
-        throw new ApiError(500,"Something went wrong while deleting artwork!")
+    if(!announcement){
+        throw new ApiError(500,"Something went wrong while deleting announcement!")
     }
-
-    await destroyOnCloudinary(artwork.contentFile)
+    
+    if(announcement.image != null){
+        await destroyOnCloudinary(announcement.image)
+    } 
 
     res
     .status(200)
-    .json(new ApiResponse(200,artwork,"Artwork deleted successfully!"))
+    .json(new ApiResponse(200,announcement,"Announcement deleted successfully!"))
 } )
 
-const getArtwork = asyncHandler( async(req,res) => {
+const getAnnouncement = asyncHandler( async(req,res) => {
 
-    const {artworkId} = req.params
+    const {announcementId} = req.params
 
     // const {userId} = req.user?._id
     
-    if(!artworkId){
-        throw new ApiError(400,"Artwork Id is missing!")
+    if(!announcementId){
+        throw new ApiError(400,"Announcement Id is missing!")
     }
 
-    const artworkDetails = await Artwork.aggregate([
+    const announcementDetails = await Announcement.aggregate([
 
         {
             $match: {
-                _id: new mongoose.Types.ObjectId(artworkId)
+                _id: new mongoose.Types.ObjectId(announcementId)
             }
         },
         {
             $lookup:{
                 from:"likes",
                 localField:"_id",
-                foreignField:"artwork",
+                foreignField:"announcement",
                 as:"likes"
             }
         },
@@ -131,16 +134,16 @@ const getArtwork = asyncHandler( async(req,res) => {
             $lookup:{
                 from:"comments",
                 localField:"_id",
-                foreignField:"artwork",
+                foreignField:"announcement",
                 as:"comments"
             }
         },
         {
             $lookup:{
-                from:"savedartworks",
+                from:"savedannouncements",
                 localField: `${req.user?._id}`,
                 foreignField:"owner",
-                as:"savedArtworks"
+                as:"savedAnnouncements"
             }
         },
         {
@@ -178,7 +181,7 @@ const getArtwork = asyncHandler( async(req,res) => {
                 },
                 isSaved:{
                     $cond:{
-                        if: { $in: [artworkId,"$savedArtworks"] },
+                        if: { $in: [announcementId,"$savedAnnouncements"] },
                         then: true,
                         else: false
                     }
@@ -191,7 +194,7 @@ const getArtwork = asyncHandler( async(req,res) => {
         {
             $project:{
                 _id:1,
-                contentFile:1,
+                image:1,
                 title:1,
                 description:1,
                 category:1,
@@ -206,19 +209,19 @@ const getArtwork = asyncHandler( async(req,res) => {
 
     ])
 
-    if(!artworkDetails[0]){
-        throw new ApiError(500,"Something went wrong while fetching artwork details!")
+    if(!announcementDetails[0]){
+        throw new ApiError(500,"Something went wrong while fetching announcement details!")
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,artworkDetails[0],"Artwork details fetched successfully!"))
+    .json(new ApiResponse(200,announcementDetails[0],"Announcement details fetched successfully!"))
 } )
 
 
-const getArtworksByContentChoice = asyncHandler ( async(req,res) =>  {
+const getAnnouncementsByContentChoice = asyncHandler ( async(req,res) =>  {
 
-    const artworks = await User.aggregate([
+    const announcements = await User.aggregate([
 
         {
             $match:{
@@ -227,10 +230,10 @@ const getArtworksByContentChoice = asyncHandler ( async(req,res) =>  {
         },
         {
             $lookup:{
-                from:"artworks",
+                from:"announcements",
                 localField:"contentChoice",
                 foreignField:"category",
-                as:"artworks",
+                as:"announcements",
 
                 pipeline:[
                     {
@@ -245,7 +248,7 @@ const getArtworksByContentChoice = asyncHandler ( async(req,res) =>  {
                         $lookup:{
                             from:"likes",
                             localField:"_id",
-                            foreignField:"artwork",
+                            foreignField:"announcement",
                             as:"likes"
                         }
                     },
@@ -253,7 +256,7 @@ const getArtworksByContentChoice = asyncHandler ( async(req,res) =>  {
                         $lookup:{
                             from:"comments",
                             localField:"_id",
-                            foreignField:"artwork",
+                            foreignField:"announcement",
                             as:"comments"
                         }
                     },
@@ -275,27 +278,27 @@ const getArtworksByContentChoice = asyncHandler ( async(req,res) =>  {
         },
         {
             $project:{
-                artworks:1
+                announcements:1
             }
         }
            
     ])
      
-    if(!artworks[0]){
-        throw new ApiError(500,"Something went wrong while fetching the artworks!")
+    if(!announcements[0]){
+        throw new ApiError(500,"Something went wrong while fetching the announcements!")
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,artworks[0],"Artworks fetched successfully!"))
+    .json(new ApiResponse(200,announcements[0],"Announcements fetched successfully!"))
 
 } )
 
 export { 
-    createArtwork, 
-    editArtwork,
-    deleteArtwork,
-    getArtwork,
-    getArtworksByContentChoice
+    createAnnouncement, 
+    editAnnouncement,
+    deleteAnnouncement,
+    getAnnouncement,
+    getAnnouncementsByContentChoice
 }
 
