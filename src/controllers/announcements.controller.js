@@ -12,13 +12,13 @@ const createAnnouncement = asyncHandler( async(req,res) => {
     const { title,description,category } = req.body
 
     if([title,description,category].some((ele)=>{
-       ele?.trim===""  
+       return ele?.trim===""  
     })){
        throw new ApiError(400,"Required fields are missing!")
     }
 
     const contentImageLocalPath = req.file?.path
-
+    
     const contentImage = await uploadOnCloudinary(contentImageLocalPath)
 
     const announcement = await Announcement.create({
@@ -49,7 +49,7 @@ const editAnnouncement = asyncHandler( async(req,res) => {
     const { title,description,category } = req.body
 
     if([title,description,category].some((ele)=>{
-        ele?.trim===""  
+        return ele?.trim===""  
      })){
         throw new ApiError(400,"Required fields are missing!")
      }
@@ -96,7 +96,9 @@ const deleteAnnouncement = asyncHandler( async(req,res) => {
         throw new ApiError(500,"Something went wrong while deleting announcement!")
     }
     
-    if(announcement.image != null){
+    // console.log(announcement.image);
+    
+    if((announcement.image) != null){
         await destroyOnCloudinary(announcement.image)
     } 
 

@@ -12,7 +12,7 @@ const createArtwork = asyncHandler( async(req,res) => {
     const { title,description,category } = req.body
 
     if([title,description,category].some((ele)=>{
-       ele?.trim===""  
+       return ele?.trim===""  
     })){
        throw new ApiError(400,"Required fields are missing!")
     }
@@ -57,7 +57,7 @@ const editArtwork = asyncHandler( async(req,res) => {
     const { title,description,category } = req.body
 
     if([title,description,category].some((ele)=>{
-        ele?.trim===""  
+        return ele?.trim===""  
      })){
         throw new ApiError(400,"Required fields are missing!")
      }
