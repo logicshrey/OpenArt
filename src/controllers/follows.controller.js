@@ -48,7 +48,7 @@ const removeFollower = asyncHandler( async(req,res) => {
         follower: req.user?._id
     })
 
-    if(!removedFollower){
+    if(removedFollower.deletedCount === 0){
         throw new ApiError(500,"Something went wrong while removing the follower!")
     }
 
