@@ -23,6 +23,7 @@ import artblogRouter from "./routes/artblogs.routes.js"
 import announcementRouter from "./routes/announcements.routes.js"
 import followRouter from "./routes/follows.routes.js"
 import commentRouter from "./routes/comments.routes.js"
+import likeRouter from "./routes/likes.routes.js"
 
 // Routes Activation
 
@@ -32,5 +33,6 @@ app.use("/openart/api/artblogs",artblogRouter)
 app.use("/openart/api/announcements",announcementRouter)
 app.use("/openart/api/follows",followRouter)
 app.use("/openart/api/comments",commentRouter)
+app.use("/openart/api/likes",likeRouter)
 
 export { app }

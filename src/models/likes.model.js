@@ -5,17 +5,17 @@ const likeSchema = new mongoose.Schema({
    artwork:{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Artwork",
-    default: null
+    // default: null
    },
    artblog:{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Artblog",
-    default: null
+    // default: null
    },
    announcement:{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Announcement",
-    default: null
+    // default: null
    },
    likedBy:{
     type: mongoose.Schema.Types.ObjectId,
