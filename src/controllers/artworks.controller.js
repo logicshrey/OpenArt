@@ -107,6 +107,7 @@ const getArtwork = asyncHandler( async(req,res) => {
     const {artworkId} = req.params
 
     // const {userId} = req.user?._id
+    const userId = new mongoose.Types.ObjectId(req.user?._id)
     
     if(!artworkId){
         throw new ApiError(400,"Artwork Id is missing!")
@@ -133,14 +134,6 @@ const getArtwork = asyncHandler( async(req,res) => {
                 localField:"_id",
                 foreignField:"artwork",
                 as:"comments"
-            }
-        },
-        {
-            $lookup:{
-                from:"savedartworks",
-                localField: `${req.user?._id}`,
-                foreignField:"owner",
-                as:"savedArtworks"
             }
         },
         {
@@ -176,15 +169,15 @@ const getArtwork = asyncHandler( async(req,res) => {
                 commentsCount:{
                     $size: "$comments"
                 },
-                isSaved:{
+                owner:{
+                    $first: "$owner"
+                },
+                isLiked:{
                     $cond:{
-                        if: { $in: [artworkId,"$savedArtworks"] },
+                        if: { $in: [req.user._id,"$likes.likedBy"] },
                         then: true,
                         else: false
                     }
-                },
-                owner:{
-                    $first: "$owner"
                 }
             }
         },
@@ -200,7 +193,7 @@ const getArtwork = asyncHandler( async(req,res) => {
                 owner:1,
                 likesCount:1,
                 commentsCount:1,
-                isSaved:1
+                isLiked:1
             }
         }
 
@@ -210,6 +203,41 @@ const getArtwork = asyncHandler( async(req,res) => {
         throw new ApiError(500,"Something went wrong while fetching artwork details!")
     }
 
+    const artwork = await User.aggregate([
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup:{
+                from:"savedartworks",
+                localField:"_id",
+                foreignField:"owner",
+                as:"savedartworks"
+            }
+        },
+        {
+            $addFields:{
+                isSaved:{
+                    $cond:{
+                        if: { $in: [new mongoose.Types.ObjectId(artworkId),"$savedartworks.artwork"] },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project:{
+                isSaved:1
+            }
+        }
+    ])
+    
+
+    artworkDetails[0].isSaved = artwork[0].isSaved
+    
     res
     .status(200)
     .json(new ApiResponse(200,artworkDetails[0],"Artwork details fetched successfully!"))
