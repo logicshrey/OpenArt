@@ -172,7 +172,7 @@ const getAnnouncement = asyncHandler( async(req,res) => {
                 },
                 commentsCount:{
                     $size: "$comments"
-                }
+                },
                 owner:{
                     $first: "$owner"
                 },
