@@ -142,14 +142,6 @@ const getAnnouncement = asyncHandler( async(req,res) => {
         },
         {
             $lookup:{
-                from:"savedannouncements",
-                localField: `${req.user?._id}`,
-                foreignField:"owner",
-                as:"savedAnnouncements"
-            }
-        },
-        {
-            $lookup:{
                 from:"users",
                 localField:"owner",
                 foreignField:"_id",
@@ -180,16 +172,16 @@ const getAnnouncement = asyncHandler( async(req,res) => {
                 },
                 commentsCount:{
                     $size: "$comments"
+                }
+                owner:{
+                    $first: "$owner"
                 },
-                isSaved:{
+                isLiked:{
                     $cond:{
-                        if: { $in: [announcementId,"$savedAnnouncements"] },
+                        if: { $in: [req.user._id,"$likes.likedBy"] },
                         then: true,
                         else: false
                     }
-                },
-                owner:{
-                    $first: "$owner"
                 }
             }
         },
@@ -205,7 +197,7 @@ const getAnnouncement = asyncHandler( async(req,res) => {
                 owner:1,
                 likesCount:1,
                 commentsCount:1,
-                isSaved:1
+                isLiked:1
             }
         }
 
@@ -214,6 +206,41 @@ const getAnnouncement = asyncHandler( async(req,res) => {
     if(!announcementDetails[0]){
         throw new ApiError(500,"Something went wrong while fetching announcement details!")
     }
+    
+    const announcement = await User.aggregate([
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup:{
+                from:"savedannouncements",
+                localField:"_id",
+                foreignField:"owner",
+                as:"savedannouncements"
+            }
+        },
+        {
+            $addFields:{
+                isSaved:{
+                    $cond:{
+                        if: { $in: [new mongoose.Types.ObjectId(announcementId),"$savedannouncements.announcement"] },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project:{
+                isSaved:1
+            }
+        }
+    ])
+    
+
+    announcementDetails[0].isSaved = announcement[0].isSaved
 
     res
     .status(200)

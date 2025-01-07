@@ -25,6 +25,8 @@ import followRouter from "./routes/follows.routes.js"
 import commentRouter from "./routes/comments.routes.js"
 import likeRouter from "./routes/likes.routes.js"
 import savedArtworkRouter from "./routes/savedArtworks.routes.js"
+import savedArtblogRouter from "./routes/savedArtblogs.routes.js"
+import savedAnnouncementRouter from "./routes/savedAnnouncements.routes.js"
 
 // Routes Activation
 
@@ -36,5 +38,7 @@ app.use("/openart/api/follows",followRouter)
 app.use("/openart/api/comments",commentRouter)
 app.use("/openart/api/likes",likeRouter)
 app.use("/openart/api/savedartworks",savedArtworkRouter)
+app.use("/openart/api/savedartblogs",savedArtblogRouter)
+app.use("/openart/api/savedannouncements",savedAnnouncementRouter)
 
 export { app }

@@ -122,14 +122,6 @@ const getArtblog = asyncHandler( async(req,res) => {
         },
         {
             $lookup:{
-                from:"savedartblogs",
-                localField: `${req.user?._id}`,
-                foreignField:"owner",
-                as:"savedArtblogs"
-            }
-        },
-        {
-            $lookup:{
                 from:"users",
                 localField:"owner",
                 foreignField:"_id",
@@ -161,15 +153,15 @@ const getArtblog = asyncHandler( async(req,res) => {
                 commentsCount:{
                     $size: "$comments"
                 },
-                isSaved:{
+                owner:{
+                    $first: "$owner"
+                },
+                isLiked:{
                     $cond:{
-                        if: { $in: [artblogId,"$savedArtblogs"] },
+                        if: { $in: [req.user._id,"$likes.likedBy"] },
                         then: true,
                         else: false
                     }
-                },
-                owner:{
-                    $first: "$owner"
                 }
             }
         },
@@ -185,7 +177,7 @@ const getArtblog = asyncHandler( async(req,res) => {
                 owner:1,
                 likesCount:1,
                 commentsCount:1,
-                isSaved:1
+                isLiked:1
             }
         }
 
@@ -194,6 +186,41 @@ const getArtblog = asyncHandler( async(req,res) => {
     if(!artblogDetails[0]){
         throw new ApiError(500,"Something went wrong while fetching artblog details!")
     }
+
+    const artblog = await User.aggregate([
+            {
+                $match:{
+                    _id: new mongoose.Types.ObjectId(req.user._id)
+                }
+            },
+            {
+                $lookup:{
+                    from:"savedartblogs",
+                    localField:"_id",
+                    foreignField:"owner",
+                    as:"savedartblogs"
+                }
+            },
+            {
+                $addFields:{
+                    isSaved:{
+                        $cond:{
+                            if: { $in: [new mongoose.Types.ObjectId(artblogId),"$savedartblogs.artblog"] },
+                            then: true,
+                            else: false
+                        }
+                    }
+                }
+            },
+            {
+                $project:{
+                    isSaved:1
+                }
+            }
+        ])
+        
+    
+        artblogDetails[0].isSaved = artblog[0].isSaved
 
     res
     .status(200)
