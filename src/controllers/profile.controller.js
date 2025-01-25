@@ -109,6 +109,8 @@ const getArtistProfile = asyncHandler( async(req,res) => {
 
 } )
 
+
+
 export{
     getArtistProfile
 }
