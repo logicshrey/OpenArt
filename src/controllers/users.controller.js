@@ -9,7 +9,9 @@ import jwt from "jsonwebtoken"
 
 const cookieOptions = {
    httpOnly: true,
-   secure: true
+   secure: true,
+   sameSite: 'none',
+   domain: '.onrender.com'
 }
 
 const generateAccessAndRefreshTokens = async(userId) => {
