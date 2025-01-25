@@ -11,7 +11,7 @@ const cookieOptions = {
    httpOnly: true,
    secure: true,
    sameSite: 'none',
-   domain: '.onrender.com'
+   domain: 'openart.onrender.com'
 }
 
 const generateAccessAndRefreshTokens = async(userId) => {

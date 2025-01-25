@@ -6,7 +6,8 @@ const app = express()
 
 var corsOptions = {
     origin: process.env.CORS_ORIGIN,
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
   }
 
 
@@ -15,6 +16,7 @@ var corsOptions = {
   app.use(express.json({limit:"64kb"}))
   app.use(express.urlencoded({extended:true,limit:"64kb",}))
   app.use(express.static("public"))
+  app.options('*', cors(corsOptions));
 
   // Routes Import
 
