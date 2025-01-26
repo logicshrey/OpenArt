@@ -8,18 +8,18 @@ import { User } from "../models/users.model.js"
 import { savedAnnouncement } from "../models/savedAnnouncements.model.js"
 
 
-const saveAnnouncement = asyncHandler( async(req,res) => {
+const saveAnnouncement = asyncHandler( async(req, res, next) => {
 
     const {announcementId} = req.params
     
     if(!announcementId){
-        throw new ApiError(400,"Announcement Id is missing!")
+        return next(new ApiError(400, "Announcement Id is missing!"))
     }
 
     const isAnnouncement = await Announcement.findById(announcementId)
 
     if(!isAnnouncement){
-        throw new ApiError(404,"Cannot save announcement, Announcement does not exist!")
+        return next(new ApiError(404, "Cannot save announcement, Announcement does not exist!"))
     }
 
     const announcement = await savedAnnouncement.create({
@@ -28,27 +28,27 @@ const saveAnnouncement = asyncHandler( async(req,res) => {
     })  
 
     if(!announcement){
-        throw new ApiError(500,"Something went wrong while saving announcement!")
+        return next(new ApiError(500, "Something went wrong while saving announcement!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,announcement,"Announcement saved successfully!"))
+    .json(new ApiResponse(201, announcement, "Announcement saved successfully!"))
 } )
 
 
-const unsaveAnnouncement = asyncHandler( async(req,res) => {
+const unsaveAnnouncement = asyncHandler( async(req, res, next) => {
 
     const {announcementId} = req.params
     
     if(!announcementId){
-        throw new ApiError(400,"Announcement Id is missing!")
+        return next(new ApiError(400, "Announcement Id is missing!"))
     }
 
     const isAnnouncement = await Announcement.findById(announcementId)
 
     if(!isAnnouncement){
-        throw new ApiError(404,"Cannot unsave announcement, Announcement does not exist!")
+        return next(new ApiError(404, "Cannot unsave announcement, Announcement does not exist!"))
     }
 
     const announcement = await savedAnnouncement.deleteOne({
@@ -57,18 +57,17 @@ const unsaveAnnouncement = asyncHandler( async(req,res) => {
     })
 
     if(announcement.deletedCount === 0){
-        throw new ApiError(500,"Something went wrong while unsaving announcement!")
+        return next(new ApiError(500, "Something went wrong while unsaving announcement!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,announcement,"Announcement unsaved successfully!"))
+    .json(new ApiResponse(200, announcement, "Announcement unsaved successfully!"))
 
 } )
 
 
-
-export{
+export {
     saveAnnouncement,
     unsaveAnnouncement
 }

@@ -1,11 +1,12 @@
 
 const asyncHandler = (fn) => {
-    return async (req,res) => {
+    return async (req,res,next) => {
         try {
             await fn(req,res)
         } catch (error) {
             console.log("Error: ",error);
-            throw error
+            next(error);
+            // throw error
         }
     }        
 }

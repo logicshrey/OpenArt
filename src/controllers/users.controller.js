@@ -6,7 +6,6 @@ import { uploadOnCloudinary, destroyOnCloudinary } from "../utils/cloudinary.js"
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken"
 
-
 const cookieOptions = {
    httpOnly: true,
    secure: true,
@@ -14,55 +13,54 @@ const cookieOptions = {
    domain: 'openart.onrender.com'
 }
 
-const generateAccessAndRefreshTokens = async(userId) => {
-      try {
-         const user = await User.findById(userId)
+const generateAccessAndRefreshTokens = async (userId, next) => {
+   try {
+       const user = await User.findById(userId);
 
-         if(!user){
-           throw new ApiError(400,"User does not found!") 
-         }
+       if (!user) {
+           return next(new ApiError(400, "User not found!"));
+       }
 
-         const accessToken = await user.generateAccessToken()
+       const accessToken = await user.generateAccessToken();
 
-         if(!accessToken){
-            throw new ApiError(500,"Something went wrong while generating Access Token!")
-         }
+       if (!accessToken) {
+           return next(new ApiError(500, "Error generating Access Token!"));
+       }
 
-         const refreshToken = await user.generateRefreshToken()
+       const refreshToken = await user.generateRefreshToken();
 
-         if(!refreshToken){
-            throw new ApiError(500,"Something went wrong while generating Refresh Token!")
-         }
+       if (!refreshToken) {
+           return next(new ApiError(500, "Error generating Refresh Token!"));
+       }
 
-         user.refreshToken = refreshToken
-         user.save({validateBeforeSave:false})
+       user.refreshToken = refreshToken;
+       await user.save({ validateBeforeSave: false });
 
-         return { accessToken,refreshToken }
+       return { accessToken, refreshToken };
+   } catch (error) {
+       console.error("Error:", error);
+       return next(new ApiError(500, "Unexpected error occurred!"));
+   }
+};
 
-      } catch (error) {
-         console.log("Error: ",error);
-         throw error   
-      }
-}
-
-const register = asyncHandler( async (req,res) => {
+const register = asyncHandler( async (req,res, next) => {
 
     const { fullName,email,country,accountType,artField,username,bio,password,contentChoice } = req.body
 
     if([fullName,email,country,accountType,artField,username,bio,password].some((ele)=>{
         return ele?.trim()===""
     })){
-       throw new ApiError(400,"Required fields are missing!") 
+       return next(new ApiError(400,"Required fields are missing!")) 
     }
     
     if(contentChoice.length === 0){
-       throw new ApiError(400,"Content Choice is Empty!") 
+      return next(new ApiError(400,"Content Choice is Empty!")) 
     }
 
     const avatarLocalPath = req.files?.avatar?(req.files.avatar[0]?.path):null
 
     if(!avatarLocalPath){
-       throw new ApiError(400,"Avatar is required!") 
+       return next(new ApiError(400,"Avatar is required!")) 
     }
 
     const coverImageLocalPath = req.files?.coverImage?(req.files.coverImage[0]?.path):null
@@ -70,7 +68,7 @@ const register = asyncHandler( async (req,res) => {
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
     if(!avatar){
-        throw new ApiError(500,"Something went wrong while uploading avatar on cloudinary!")
+        return next(new ApiError(500,"Something went wrong while uploading avatar on cloudinary!"))
     }
 
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
@@ -92,7 +90,7 @@ const register = asyncHandler( async (req,res) => {
     const createdUser = await User.findById(user?._id).select("-password -refreshToken")
 
     if(!createdUser){
-       throw new ApiError(500,"Something went wrong while registering new user! Please Try Again.") 
+       return next(new ApiError(500,"Something went wrong while registering new user! Please Try Again.")) 
     }
 
     res
@@ -101,28 +99,28 @@ const register = asyncHandler( async (req,res) => {
     
 })
 
-const login = asyncHandler( async (req,res) => {
+const login = asyncHandler( async (req,res, next) => {
 
     const { username,password } = req.body
 
     if(!username){
-       throw new ApiError(400,"Username is required!") 
+       return next(new ApiError(400,"Username is required!")) 
     }
 
     if(!password){
-       throw new ApiError(400,"Password is required!") 
+       return next(new ApiError(400,"Password is required!")) 
     }
 
     const user = await User.findOne({username})
 
     if(!user){
-       throw new ApiError(404,"User does not exists") 
+       return next(new ApiError(404,"User does not exists")) 
     }
 
     const isPasswordValid = await user.isPasswordCorrect(password)
 
     if(!isPasswordValid){
-       throw new ApiError(401,"Invalid User Credentials!") 
+       return next(new ApiError(401,"Invalid User Credentials!")) 
     }
 
    const { accessToken,refreshToken } = await generateAccessAndRefreshTokens(user._id)
@@ -137,7 +135,7 @@ const login = asyncHandler( async (req,res) => {
 
 } )
 
-const logout = asyncHandler( async(req,res) => {
+const logout = asyncHandler( async(req,res, next) => {
 
    const user = await User.findByIdAndUpdate(req.user._id,{
       $unset:{refreshToken:1}
@@ -146,7 +144,7 @@ const logout = asyncHandler( async(req,res) => {
    })
    
    if(!user){
-      throw new ApiError(500,"Something went wrong while logging out the user!")
+      return next(new ApiError(500,"Something went wrong while logging out the user!"))
    }
 
    res
@@ -157,14 +155,14 @@ const logout = asyncHandler( async(req,res) => {
 
 })
 
-const updateUserDetails = asyncHandler( async(req,res) => {
+const updateUserDetails = asyncHandler( async(req,res, next) => {
 
    const { fullName,email,country,bio } = req.body
 
    if([fullName,email,country,bio].some((ele)=>{
       return ele?.trim()===""   
    })){
-      throw new ApiError(400,"Required fields are missing!")
+      return next(new ApiError(400,"Required fields are missing!"))
    }
    
    const user = await User.findByIdAndUpdate(req.user?._id,{
@@ -179,7 +177,7 @@ const updateUserDetails = asyncHandler( async(req,res) => {
    }).select("-password -refreshToken")
 
    if(!user){
-      throw new ApiError(500,"Something went wrong while updating user details!")
+      return next(new ApiError(500,"Something went wrong while updating user details!"))
    }
 
    res
@@ -188,24 +186,24 @@ const updateUserDetails = asyncHandler( async(req,res) => {
 
 } )
 
-const updateAvatar = asyncHandler( async(req,res) => {
+const updateAvatar = asyncHandler( async(req,res, next) => {
 
    const avatarLocalPath = req.file?.path
 
    if(!avatarLocalPath){
-      throw new ApiError(400,"Avatar is required!")
+      return next(new ApiError(400,"Avatar is required!"))
    }
 
    const avatar = await uploadOnCloudinary(avatarLocalPath)
 
    if(!avatar){
-      throw new ApiError(500,"Something went wrong while uploading avatar on cloudinary!")
+      return next(new ApiError(500,"Something went wrong while uploading avatar on cloudinary!"))
    }
    
    const user = await User.findById(req.user?._id).select("-password -refreshToken")
 
    if(!user){
-      throw new ApiError(500,"Something went wrong while updating avatar!")
+      return next(new ApiError(500,"Something went wrong while updating avatar!"))
    }
 
    await destroyOnCloudinary(user.avatar)
@@ -219,24 +217,24 @@ const updateAvatar = asyncHandler( async(req,res) => {
 
 } )
 
-const updateCoverImage = asyncHandler( async(req,res) => {
+const updateCoverImage = asyncHandler( async(req,res, next) => {
 
    const coverImageLocalPath = req.file?.path
 
    if(!coverImageLocalPath){
-      throw new ApiError(400,"Cover Image is required!")
+      return next(new ApiError(400,"Cover Image is required!"))
    }
 
    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
    if(!coverImage){
-      throw new ApiError(500,"Something went wrong while uploading coverimage on cloudinary!")
+      return next(new ApiError(500,"Something went wrong while uploading coverimage on cloudinary!"))
    }
    
    const user = await User.findById(req.user?._id).select("-password -refreshToken")
 
    if(!user){
-      throw new ApiError(500,"Something went wrong while updating coverimage!")
+      return next(new ApiError(500,"Something went wrong while updating coverimage!"))
    }
 
    await destroyOnCloudinary(user.coverImage)
@@ -250,24 +248,24 @@ const updateCoverImage = asyncHandler( async(req,res) => {
 
 } )
 
-const changePassword = asyncHandler( async(req,res) => {
+const changePassword = asyncHandler( async(req,res, next) => {
    
    const { oldPassword,newPassword } = req.body
 
    if(!(oldPassword || newPassword)){
-      throw new ApiError(400,"Required fields are missing!")
+      return next(new ApiError(400,"Required fields are missing!"))
    }
    
    const user = await User.findById(req.user?._id)
 
    if(!user){
-      throw new ApiError(500,"Something went wrong while changing password!")
+      return next(new ApiError(500,"Something went wrong while changing password!"))
    }
 
    const isPasswordValid = await user.isPasswordCorrect(oldPassword)
 
    if(!isPasswordValid){
-      throw new ApiError(401,"Incorrect password!")
+      return next(new ApiError(401,"Incorrect password!"))
    }
    
    user.password = newPassword
@@ -279,12 +277,12 @@ const changePassword = asyncHandler( async(req,res) => {
 
 } )
 
-const changeAccountType = asyncHandler( async(req,res) => {
+const changeAccountType = asyncHandler( async(req,res, next) => {
 
    const { accountType,artField } = req.body
 
    if(!(accountType || artField)){
-      throw new ApiError(400,"Required fields are missing!")
+      return next(new ApiError(400,"Required fields are missing!"))
    }
 
    const user = await User.findByIdAndUpdate(req.user?._id,{
@@ -297,7 +295,7 @@ const changeAccountType = asyncHandler( async(req,res) => {
    }).select("-password -refreshToken")
 
    if(!user){
-      throw new ApiError(500,"Something went wrong while changing account type!")
+      return next(new ApiError(500,"Something went wrong while changing account type!"))
    }
 
    res
@@ -306,16 +304,16 @@ const changeAccountType = asyncHandler( async(req,res) => {
 
 } )
 
-const updateContentChoice = asyncHandler( async(req,res) => {
+const updateContentChoice = asyncHandler( async(req,res, next) => {
 
    const {newContentChoice} = req.body
 
    if(!newContentChoice){
-      throw new ApiError(400,"Content Choice is Required!")
+      return next(new ApiError(400,"Content Choice is Required!"))
    }
 
    if(newContentChoice.length === 0){
-      throw new ApiError(400,"Content Choice is Empty!")
+      return next(new ApiError(400,"Content Choice is Empty!"))
    }
 
    const user = await User.findByIdAndUpdate(req.user?._id,{
@@ -327,7 +325,7 @@ const updateContentChoice = asyncHandler( async(req,res) => {
    }).select("-password -refreshToken")
    
    if(!user){
-      throw new ApiError(500,"Something went wrong while updating content choice!")
+      return next(new ApiError(500,"Something went wrong while updating content choice!"))
    }
 
    res
@@ -336,12 +334,12 @@ const updateContentChoice = asyncHandler( async(req,res) => {
    
 } ) 
 
-const refreshAccessToken = asyncHandler( async(req,res) => {
+const refreshAccessToken = asyncHandler( async(req,res, next) => {
 
    const incomingRefreshToken = req.cookies?.refreshToken
 
    if(!incomingRefreshToken){
-      throw new ApiError(400,"Refresh token not found!")
+      return next(new ApiError(400,"Refresh token not found!"))
    }
 
    const decodedToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
@@ -349,11 +347,11 @@ const refreshAccessToken = asyncHandler( async(req,res) => {
    const user = await User.findById(decodedToken?._id)
 
    if(!user){
-      throw new ApiError(404,"User not found, Invalid Refresh Token!")
+      return next(new ApiError(404,"User not found, Invalid Refresh Token!"))
    }
 
    if(incomingRefreshToken!=user.refreshToken){
-      throw new ApiError(401,"Invalid Refresh Token!")
+      return next(new ApiError(401,"Invalid Refresh Token!"))
    }
 
    const { accessToken,refreshToken } = await generateAccessAndRefreshTokens(user._id)
@@ -366,12 +364,12 @@ const refreshAccessToken = asyncHandler( async(req,res) => {
 
 } )
 
-const deleteAccount = asyncHandler( async(req,res) => {
+const deleteAccount = asyncHandler( async(req,res, next) => {
 
    const user = await User.findByIdAndDelete(req.user?._id).select("-password -refreshToken")
 
    if(!user){
-      throw new ApiError(500,"Something went wrong while deleting the user account!")
+      return next(new ApiError(500,"Something went wrong while deleting the user account!"))
    }
 
    res
@@ -381,7 +379,7 @@ const deleteAccount = asyncHandler( async(req,res) => {
    .json(new ApiResponse(200,user,"User account deleted successfully!")) 
 } )
 
-const getAccountDetails = asyncHandler( async(req,res) => {
+const getAccountDetails = asyncHandler( async(req,res, next) => {
    
    const userAccount = await User.aggregate([
 
@@ -463,7 +461,7 @@ const getAccountDetails = asyncHandler( async(req,res) => {
    ])
 
    if(!userAccount){
-      throw new ApiError(500,"Something went wrong while fetching user details!")
+      return next(new ApiError(500,"Something went wrong while fetching user details!"))
    }
 
    res
@@ -471,7 +469,7 @@ const getAccountDetails = asyncHandler( async(req,res) => {
    .json(new ApiResponse(200,userAccount[0],"User details fetched successfully!"))
 } )
 
-const getSavedArtworks = asyncHandler( async(req,res) => {
+const getSavedArtworks = asyncHandler( async(req,res, next) => {
 
    const savedArtworks = await User.aggregate([
       {
@@ -518,7 +516,7 @@ const getSavedArtworks = asyncHandler( async(req,res) => {
    ])
 
    if(!savedArtworks){
-      throw new ApiError(500,"Something went wrong while fetching saved artworks!")
+      return next(new ApiError(500,"Something went wrong while fetching saved artworks!"))
    }
 
    res
@@ -527,7 +525,7 @@ const getSavedArtworks = asyncHandler( async(req,res) => {
 
 } )
 
-const getSavedArtblogs = asyncHandler( async(req,res) => {
+const getSavedArtblogs = asyncHandler( async(req,res, next) => {
 
    const savedArtblogs = await User.aggregate([
       {
@@ -574,7 +572,7 @@ const getSavedArtblogs = asyncHandler( async(req,res) => {
    ])
 
    if(!savedArtblogs){
-      throw new ApiError(500,"Something went wrong while fetching saved artblogs!")
+      return next(new ApiError(500,"Something went wrong while fetching saved artblogs!"))
    }
 
    res
@@ -583,7 +581,7 @@ const getSavedArtblogs = asyncHandler( async(req,res) => {
 
 } )
 
-const getSavedAnnouncements = asyncHandler( async(req,res) => {
+const getSavedAnnouncements = asyncHandler( async(req,res, next) => {
 
    const savedAnnouncements = await User.aggregate([
       {
@@ -630,7 +628,7 @@ const getSavedAnnouncements = asyncHandler( async(req,res) => {
    ])
 
    if(!savedAnnouncements){
-      throw new ApiError(500,"Something went wrong while fetching saved announcements!")
+      return next(new ApiError(500,"Something went wrong while fetching saved announcements!"))
    }
 
    res

@@ -1,5 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary'
-import {ApiError} from './apiError.js'
+import { ApiError } from './apiError.js'
 import fs from "fs"
 
 cloudinary.config({ 
@@ -9,38 +9,38 @@ cloudinary.config({
 });
 
 const uploadOnCloudinary = async(localFilePath) => {
-      try {  
+    try {  
         if(!localFilePath){
-           return null;
+            return null;
         }
 
-        const response = await cloudinary.uploader.upload(localFilePath,{resource_type:"auto"})
+        const response = await cloudinary.uploader.upload(localFilePath, { resource_type: "auto" })
         
         fs.unlinkSync(localFilePath)
         return response
 
-      } catch (error) {
+    } catch (error) {
         fs.unlinkSync(localFilePath)
-        console.log("Cloudinary Upload Error: ",error);
+        console.log("Cloudinary Upload Error: ", error)
         return null
-      }
+    }
 }
 
-const destroyOnCloudinary = async (fileUrl) => {
+const destroyOnCloudinary = async (fileUrl, next) => {
     try {
-      if(!fileUrl){
-        return;
-      }
-      const regex = /\/upload\/(?:v\d+\/)?([^/.]+)/;
-      const match = fileUrl.match(regex);
-      const publicId = match ? match[1] : null;
-  
-      await cloudinary.uploader.destroy(publicId);
-  
+        if(!fileUrl){
+            return;
+        }
+        const regex = /\/upload\/(?:v\d+\/)?([^/.]+)/
+        const match = fileUrl.match(regex)
+        const publicId = match ? match[1] : null
+
+        await cloudinary.uploader.destroy(publicId)
+
     } catch (error) {
-      // console.log("Cloudinary Destroy Error: ", error);
-      throw new ApiError(501,"Something went wrong when destroying the file on cloudinary!")
+        console.log("Cloudinary Destroy Error: ", error)
+        return next(new ApiError(501, "Something went wrong when destroying the file on cloudinary!"))
     }
-  };
+}
 
 export { uploadOnCloudinary, destroyOnCloudinary }

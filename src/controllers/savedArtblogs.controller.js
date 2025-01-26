@@ -8,18 +8,18 @@ import { User } from "../models/users.model.js"
 import { savedArtblog } from "../models/savedArtblogs.model.js"
 
 
-const saveArtblog = asyncHandler( async(req,res) => {
+const saveArtblog = asyncHandler( async(req, res, next) => {
 
     const {artblogId} = req.params
     
     if(!artblogId){
-        throw new ApiError(400,"Artblog Id is missing!")
+        return next(new ApiError(400, "Artblog Id is missing!"))
     }
 
     const isArtblog = await Artblog.findById(artblogId)
 
     if(!isArtblog){
-        throw new ApiError(404,"Cannot save artblog, Artblog does not exist!")
+        return next(new ApiError(404, "Cannot save artblog, Artblog does not exist!"))
     }
 
     const artblog = await savedArtblog.create({
@@ -28,27 +28,27 @@ const saveArtblog = asyncHandler( async(req,res) => {
     })  
 
     if(!artblog){
-        throw new ApiError(500,"Something went wrong while saving artblog!")
+        return next(new ApiError(500, "Something went wrong while saving artblog!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,artblog,"Artblog saved successfully!"))
+    .json(new ApiResponse(201, artblog, "Artblog saved successfully!"))
 } )
 
 
-const unsaveArtblog = asyncHandler( async(req,res) => {
+const unsaveArtblog = asyncHandler( async(req, res, next) => {
 
     const {artblogId} = req.params
     
     if(!artblogId){
-        throw new ApiError(400,"Artblog Id is missing!")
+        return next(new ApiError(400, "Artblog Id is missing!"))
     }
 
     const isArtblog = await Artblog.findById(artblogId)
 
     if(!isArtblog){
-        throw new ApiError(404,"Cannot unsave artblog, Artblog does not exist!")
+        return next(new ApiError(404, "Cannot unsave artblog, Artblog does not exist!"))
     }
 
     const artblog = await savedArtblog.deleteOne({
@@ -57,18 +57,17 @@ const unsaveArtblog = asyncHandler( async(req,res) => {
     })
 
     if(artblog.deletedCount === 0){
-        throw new ApiError(500,"Something went wrong while unsaving artblog!")
+        return next(new ApiError(500, "Something went wrong while unsaving artblog!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,artblog,"Artblog unsaved successfully!"))
+    .json(new ApiResponse(200, artblog, "Artblog unsaved successfully!"))
 
 } )
 
 
-
-export{
+export {
     saveArtblog,
     unsaveArtblog
 }

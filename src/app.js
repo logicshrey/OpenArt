@@ -46,4 +46,26 @@ app.use("/openart/api/savedartblogs",savedArtblogRouter)
 app.use("/openart/api/savedannouncements",savedAnnouncementRouter)
 app.use("/openart/api/profiles",profileRouter)
 
+
+// Error-Handling Middleware
+app.use((err, req, res, next) => {
+  if (err instanceof ApiError) {
+      res.status(err.statusCode || 500).json({
+          message: err.message,
+          errors: err.errors || null,
+        });
+    } else {
+        console.error("Unexpected Error:", err);
+        res.status(500).json({
+            message: "An unexpected error occurred. Please try again later.",
+        });
+    }
+});
+
+//   404 Middleware
+
+app.use((req, res, next) => {
+  res.status(404).json({ message: "The requested resource was not found." });
+});
+
 export { app }

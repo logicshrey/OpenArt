@@ -12,18 +12,18 @@ import { Like } from "../models/likes.model.js"
 
 // Artwork Likes
 
-const addLikeToArtwork = asyncHandler( async(req,res) => {
+const addLikeToArtwork = asyncHandler( async(req, res, next) => {
 
     const {artworkId} = req.params
 
     if(!artworkId){
-        throw new ApiError(400,"artworkId is required!")
+        return next(new ApiError(400, "artworkId is required!"))
     }
 
     const isArtwork = await Artwork.findById(artworkId)
 
     if(!isArtwork){
-        throw new ApiError(404,"Cannot add like, Artwork does not exist!")
+        return next(new ApiError(404, "Cannot add like, Artwork does not exist!"))
     }
 
     const like = await Like.create({
@@ -32,20 +32,20 @@ const addLikeToArtwork = asyncHandler( async(req,res) => {
     })
 
     if(!like){
-        throw new ApiError(500,"Something went wrong while liking an artwork!")
+        return next(new ApiError(500, "Something went wrong while liking an artwork!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,like,"Like added successfully!"))
+    .json(new ApiResponse(201, like, "Like added successfully!"))
 } )
 
-const getLikesOfArtwork = asyncHandler( async(req,res) => {
+const getLikesOfArtwork = asyncHandler( async(req, res, next) => {
 
     const {artworkId} = req.params
 
     if(!artworkId){
-        throw new ApiError(400,"artworkId is required!")
+        return next(new ApiError(400, "artworkId is required!"))
     }
     
     const likes = await Artwork.aggregate([
@@ -111,20 +111,20 @@ const getLikesOfArtwork = asyncHandler( async(req,res) => {
     ])
 
     if(!likes[0]){
-        throw new ApiError(500,"Something went wrong while fetching artwork likes!")
+        return next(new ApiError(500, "Something went wrong while fetching artwork likes!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,likes[0],"Likes fetched successfully!"))
+    .json(new ApiResponse(200, likes[0], "Likes fetched successfully!"))
 } )
 
-const unlikeArtwork = asyncHandler( async(req,res) => {
+const unlikeArtwork = asyncHandler( async(req, res, next) => {
 
     const {artworkId} = req.params
 
     if(!artworkId){
-        throw new ApiError(400,"artworkId is required!")
+        return next(new ApiError(400, "artworkId is required!"))
     }
 
     const removedLiked = await Like.deleteOne({
@@ -133,30 +133,30 @@ const unlikeArtwork = asyncHandler( async(req,res) => {
     })
 
     if(removedLiked.deletedCount === 0){
-        throw new ApiError(500,"Something went wrong while unliking the artwork!")
+        return next(new ApiError(500, "Something went wrong while unliking the artwork!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,removedLiked,"Artwork unliked successfully!"))
+    .json(new ApiResponse(200, removedLiked, "Artwork unliked successfully!"))
 
 } )
 
 
 // Artblog Likes
 
-const addLikeToArtblog = asyncHandler( async(req,res) => {
+const addLikeToArtblog = asyncHandler( async(req, res, next) => {
 
     const {artblogId} = req.params
 
     if(!artblogId){
-        throw new ApiError(400,"artblogId is required!")
+        return next(new ApiError(400, "artblogId is required!"))
     }
 
     const isArtblog = await Artblog.findById(artblogId)
 
     if(!isArtblog){
-        throw new ApiError(404,"Cannot add like, Artblog does not exist!")
+        return next(new ApiError(404, "Cannot add like, Artblog does not exist!"))
     }
 
     const like = await Like.create({
@@ -165,20 +165,20 @@ const addLikeToArtblog = asyncHandler( async(req,res) => {
     })
 
     if(!like){
-        throw new ApiError(500,"Something went wrong while liking an artblog!")
+        return next(new ApiError(500, "Something went wrong while liking an artblog!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,like,"Like added successfully!"))
+    .json(new ApiResponse(201, like, "Like added successfully!"))
 } )
 
-const getLikesOfArtblog = asyncHandler( async(req,res) => {
+const getLikesOfArtblog = asyncHandler( async(req, res, next) => {
 
     const {artblogId} = req.params
 
     if(!artblogId){
-        throw new ApiError(400,"artblogId is required!")
+        return next(new ApiError(400, "artblogId is required!"))
     }
     
     const likes = await Artblog.aggregate([
@@ -244,20 +244,20 @@ const getLikesOfArtblog = asyncHandler( async(req,res) => {
     ])
 
     if(!likes[0]){
-        throw new ApiError(500,"Something went wrong while fetching artblog likes!")
+        return next(new ApiError(500, "Something went wrong while fetching artblog likes!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,likes[0],"Likes fetched successfully!"))
+    .json(new ApiResponse(200, likes[0], "Likes fetched successfully!"))
 } )
 
-const unlikeArtblog = asyncHandler( async(req,res) => {
+const unlikeArtblog = asyncHandler( async(req, res, next) => {
 
     const {artblogId} = req.params
 
     if(!artblogId){
-        throw new ApiError(400,"artblogId is required!")
+        return next(new ApiError(400, "artblogId is required!"))
     }
 
     const removedLiked = await Like.deleteOne({
@@ -266,30 +266,30 @@ const unlikeArtblog = asyncHandler( async(req,res) => {
     })
 
     if(removedLiked.deletedCount === 0){
-        throw new ApiError(500,"Something went wrong while unliking the artblog!")
+        return next(new ApiError(500, "Something went wrong while unliking the artblog!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,removedLiked,"Artblog unliked successfully!"))
+    .json(new ApiResponse(200, removedLiked, "Artblog unliked successfully!"))
 
 } )
 
 
 // Announcement Likes
 
-const addLikeToAnnouncement = asyncHandler( async(req,res) => {
+const addLikeToAnnouncement = asyncHandler( async(req, res, next) => {
 
     const {announcementId} = req.params
 
     if(!announcementId){
-        throw new ApiError(400,"announcementId is required!")
+        return next(new ApiError(400, "announcementId is required!"))
     }
 
     const isAnnouncement = await Announcement.findById(announcementId)
 
     if(!isAnnouncement){
-        throw new ApiError(404,"Cannot add like, Announcement does not exist!")
+        return next(new ApiError(404, "Cannot add like, Announcement does not exist!"))
     }
 
     const like = await Like.create({
@@ -298,20 +298,20 @@ const addLikeToAnnouncement = asyncHandler( async(req,res) => {
     })
 
     if(!like){
-        throw new ApiError(500,"Something went wrong while liking an announcement!")
+        return next(new ApiError(500, "Something went wrong while liking an announcement!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,like,"Like added successfully!"))
+    .json(new ApiResponse(201, like, "Like added successfully!"))
 } )
 
-const getLikesOfAnnouncement = asyncHandler( async(req,res) => {
+const getLikesOfAnnouncement = asyncHandler( async(req, res, next) => {
 
     const {announcementId} = req.params
 
     if(!announcementId){
-        throw new ApiError(400,"announcementId is required!")
+        return next(new ApiError(400, "announcementId is required!"))
     }
     
     const likes = await Announcement.aggregate([
@@ -377,20 +377,20 @@ const getLikesOfAnnouncement = asyncHandler( async(req,res) => {
     ])
 
     if(!likes[0]){
-        throw new ApiError(500,"Something went wrong while fetching announcement likes!")
+        return next(new ApiError(500, "Something went wrong while fetching announcement likes!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,likes[0],"Likes fetched successfully!"))
+    .json(new ApiResponse(200, likes[0], "Likes fetched successfully!"))
 } )
 
-const unlikeAnnouncement = asyncHandler( async(req,res) => {
+const unlikeAnnouncement = asyncHandler( async(req, res, next) => {
 
     const {announcementId} = req.params
 
     if(!announcementId){
-        throw new ApiError(400,"announcementId is required!")
+        return next(new ApiError(400, "announcementId is required!"))
     }
 
     const removedLiked = await Like.deleteOne({
@@ -399,16 +399,16 @@ const unlikeAnnouncement = asyncHandler( async(req,res) => {
     })
 
     if(removedLiked.deletedCount === 0){
-        throw new ApiError(500,"Something went wrong while unliking the announcement!")
+        return next(new ApiError(500, "Something went wrong while unliking the announcement!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,removedLiked,"Announcement unliked successfully!"))
+    .json(new ApiResponse(200, removedLiked, "Announcement unliked successfully!"))
 
 } )
 
-export{
+export {
     addLikeToArtwork,
     getLikesOfArtwork,
     unlikeArtwork,

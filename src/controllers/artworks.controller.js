@@ -7,26 +7,26 @@ import mongoose from "mongoose";
 import { User } from "../models/users.model.js"
 
 
-const createArtwork = asyncHandler( async(req,res) => {
+const createArtwork = asyncHandler( async(req, res, next) => {
 
-    const { title,description,category } = req.body
+    const { title, description, category } = req.body
 
-    if([title,description,category].some((ele)=>{
-       return ele?.trim===""  
+    if([title, description, category].some((ele) => {
+       return ele?.trim() === ""  
     })){
-       throw new ApiError(400,"Required fields are missing!")
+       return next(new ApiError(400, "Required fields are missing!"))
     }
 
     const contentFileLocalPath = req.file?.path
 
     if(!contentFileLocalPath){
-        throw new ApiError(400,"Content File is required!")
+        return next(new ApiError(400, "Content File is required!"))
     }
 
     const contentFile = await uploadOnCloudinary(contentFileLocalPath)
 
     if(!contentFile){
-       throw new ApiError(500,"Something went wrong while uploading content file on cloudinary!")
+       return next(new ApiError(500, "Something went wrong while uploading content file on cloudinary!"))
     }
 
     const artwork = await Artwork.create({
@@ -38,79 +38,79 @@ const createArtwork = asyncHandler( async(req,res) => {
     })
 
     if(!artwork){
-        throw new ApiError(500,"Something went wrong while creating new artwork!")
+        return next(new ApiError(500, "Something went wrong while creating new artwork!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,artwork,"New Artwork Created Successfully!"))
+    .json(new ApiResponse(201, artwork, "New Artwork Created Successfully!"))
 } )
 
-const editArtwork = asyncHandler( async(req,res) => {
+const editArtwork = asyncHandler( async(req, res, next) => {
 
     const {artworkId} = req.params
     
     if(!artworkId){
-        throw new ApiError(400,"Artwork Id is missing!")
+        return next(new ApiError(400, "Artwork Id is missing!"))
     }
 
-    const { title,description,category } = req.body
+    const { title, description, category } = req.body
 
-    if([title,description,category].some((ele)=>{
-        return ele?.trim===""  
+    if([title, description, category].some((ele) => {
+        return ele?.trim() === ""  
      })){
-        throw new ApiError(400,"Required fields are missing!")
+        return next(new ApiError(400, "Required fields are missing!"))
      }
     
-     const artwork = await Artwork.findByIdAndUpdate(artworkId,{
-        $set:{
+     const artwork = await Artwork.findByIdAndUpdate(artworkId, {
+        $set: {
             title,
             description,
             category
         }
      },
      {
-        new:true
+        new: true
      })
 
      if(!artwork){
-        throw new ApiError(404,"Artwork Not Found!")
+        return next(new ApiError(404, "Artwork Not Found!"))
      }
      
      res
-     .json(new ApiResponse(200,artwork,"Artwork Edited Successfully!"))
+     .status(200)
+     .json(new ApiResponse(200, artwork, "Artwork Edited Successfully!"))
 } )
 
-const deleteArtwork = asyncHandler( async(req,res) => {
+const deleteArtwork = asyncHandler( async(req, res, next) => {
     
     const {artworkId} = req.params
     
     if(!artworkId){
-        throw new ApiError(400,"Artwork Id is missing!")
+        return next(new ApiError(400, "Artwork Id is missing!"))
     }
 
     const artwork = await Artwork.findByIdAndDelete(artworkId)
 
     if(!artwork){
-        throw new ApiError(500,"Something went wrong while deleting artwork!")
+        return next(new ApiError(500, "Something went wrong while deleting artwork!"))
     }
 
     await destroyOnCloudinary(artwork.contentFile)
 
     res
     .status(200)
-    .json(new ApiResponse(200,artwork,"Artwork deleted successfully!"))
+    .json(new ApiResponse(200, artwork, "Artwork deleted successfully!"))
 } )
 
-const getArtwork = asyncHandler( async(req,res) => {
+const getArtwork = asyncHandler( async(req, res, next) => {
 
     const {artworkId} = req.params
 
-    // const {userId} = req.user?._id
     const userId = new mongoose.Types.ObjectId(req.user?._id)
     
     if(!artworkId){
-        throw new ApiError(400,"Artwork Id is missing!")
+        return next(new ApiError(400, "Artwork Id is missing!"))
     }
 
     const artworkDetails = await Artwork.aggregate([
@@ -174,7 +174,7 @@ const getArtwork = asyncHandler( async(req,res) => {
                 },
                 isLiked:{
                     $cond:{
-                        if: { $in: [req.user._id,"$likes.likedBy"] },
+                        if: { $in: [req.user._id, "$likes.likedBy"] },
                         then: true,
                         else: false
                     }
@@ -200,7 +200,7 @@ const getArtwork = asyncHandler( async(req,res) => {
     ])
 
     if(!artworkDetails[0]){
-        throw new ApiError(500,"Something went wrong while fetching artwork details!")
+        return next(new ApiError(500, "Something went wrong while fetching artwork details!"))
     }
 
     const artwork = await User.aggregate([
@@ -221,7 +221,7 @@ const getArtwork = asyncHandler( async(req,res) => {
             $addFields:{
                 isSaved:{
                     $cond:{
-                        if: { $in: [new mongoose.Types.ObjectId(artworkId),"$savedartworks.artwork"] },
+                        if: { $in: [new mongoose.Types.ObjectId(artworkId), "$savedartworks.artwork"] },
                         then: true,
                         else: false
                     }
@@ -240,11 +240,11 @@ const getArtwork = asyncHandler( async(req,res) => {
     
     res
     .status(200)
-    .json(new ApiResponse(200,artworkDetails[0],"Artwork details fetched successfully!"))
+    .json(new ApiResponse(200, artworkDetails[0], "Artwork details fetched successfully!"))
 } )
 
 
-const getArtworksByContentChoice = asyncHandler ( async(req,res) =>  {
+const getArtworksByContentChoice = asyncHandler ( async(req, res, next) =>  {
 
     const artworks = await User.aggregate([
 
@@ -310,12 +310,12 @@ const getArtworksByContentChoice = asyncHandler ( async(req,res) =>  {
     ])
      
     if(!artworks[0]){
-        throw new ApiError(500,"Something went wrong while fetching the artworks!")
+        return next(new ApiError(500, "Something went wrong while fetching the artworks!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,artworks[0],"Artworks fetched successfully!"))
+    .json(new ApiResponse(200, artworks[0], "Artworks fetched successfully!"))
 
 } )
 
@@ -326,4 +326,3 @@ export {
     getArtwork,
     getArtworksByContentChoice
 }
-

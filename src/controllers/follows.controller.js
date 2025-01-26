@@ -7,18 +7,18 @@ import mongoose from "mongoose";
 import { User } from "../models/users.model.js"
 
 
-const addFollower = asyncHandler( async(req,res) => {
+const addFollower = asyncHandler( async(req, res, next) => {
 
     const { accountId } = req.params
 
     if(!accountId){
-        throw new ApiError(400,"accountId is required!")
+        return next(new ApiError(400, "accountId is required!"))
     }
 
     const user = await User.findById(accountId)
 
     if(!user){
-        throw new ApiError(404,"User account does not exists!")
+        return next(new ApiError(404, "User account does not exists!"))
     }
 
     const followDetails = await Follow.create({
@@ -27,20 +27,20 @@ const addFollower = asyncHandler( async(req,res) => {
     })
 
     if(!followDetails){
-        throw new ApiError(500,"Something went wrong while adding new follower!")
+        return next(new ApiError(500, "Something went wrong while adding new follower!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,followDetails,"New follower added successfully!"))
+    .json(new ApiResponse(201, followDetails, "New follower added successfully!"))
 } )
 
-const removeFollower = asyncHandler( async(req,res) => {
+const removeFollower = asyncHandler( async(req, res, next) => {
 
     const { accountId } = req.params
 
     if(!accountId){
-        throw new ApiError(400,"accountId is required!")
+        return next(new ApiError(400, "accountId is required!"))
     }
 
     const removedFollower = await Follow.deleteOne({
@@ -49,20 +49,20 @@ const removeFollower = asyncHandler( async(req,res) => {
     })
 
     if(removedFollower.deletedCount === 0){
-        throw new ApiError(500,"Something went wrong while removing the follower!")
+        return next(new ApiError(500, "Something went wrong while removing the follower!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,removedFollower,"Follower removed successfully!"))
+    .json(new ApiResponse(200, removedFollower, "Follower removed successfully!"))
 } )
 
-const getFollowers = asyncHandler( async(req,res) => {
+const getFollowers = asyncHandler( async(req, res, next) => {
     
     const { accountId } = req.params
 
     if(!accountId){
-        throw new ApiError(400,"accountId is required!")
+        return next(new ApiError(400, "accountId is required!"))
     }
 
     const followers = await User.aggregate([
@@ -128,20 +128,20 @@ const getFollowers = asyncHandler( async(req,res) => {
     ])
 
     if(!followers[0]){
-        throw new ApiError(500,"Something went wrong while fetching followers!")
+        return next(new ApiError(500, "Something went wrong while fetching followers!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,followers[0],"Followers fetched successfully!"))
+    .json(new ApiResponse(200, followers[0], "Followers fetched successfully!"))
 } )
 
-const getFollowing = asyncHandler( async(req,res) => {
+const getFollowing = asyncHandler( async(req, res, next) => {
     
     const { accountId } = req.params
 
     if(!accountId){
-        throw new ApiError(400,"accountId is required!")
+        return next(new ApiError(400, "accountId is required!"))
     }
 
     const followings = await User.aggregate([
@@ -207,14 +207,13 @@ const getFollowing = asyncHandler( async(req,res) => {
     ])
 
     if(!followings[0]){
-        throw new ApiError(500,"Something went wrong while fetching followings!")
+        return next(new ApiError(500, "Something went wrong while fetching followings!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,followings[0],"Followings fetched successfully!"))
+    .json(new ApiResponse(200, followings[0], "Followings fetched successfully!"))
 } )
-
 
 
 export {

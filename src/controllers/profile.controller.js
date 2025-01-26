@@ -5,12 +5,12 @@ import { ApiResponse } from "../utils/apiResponse.js"
 import mongoose from "mongoose"
 
 
-const getArtistProfile = asyncHandler( async(req,res) => {
+const getArtistProfile = asyncHandler( async(req, res, next) => {
 
     const {profileId} = req.params
     
     if(!profileId){
-        throw new ApiError(400,"Profile Id is required!")
+        return next(new ApiError(400, "Profile Id is required!"))
     }
 
     const artistProfile = await User.aggregate([
@@ -100,17 +100,16 @@ const getArtistProfile = asyncHandler( async(req,res) => {
     ])
 
     if(!artistProfile[0]){
-        throw new ApiError(500,"Something went wrong while fetching profile details!")
+        return next(new ApiError(500, "Something went wrong while fetching profile details!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,artistProfile[0],"Profile details fetched successfully!"))
+    .json(new ApiResponse(200, artistProfile[0], "Profile details fetched successfully!"))
 
 } )
 
 
-
-export{
+export {
     getArtistProfile
 }

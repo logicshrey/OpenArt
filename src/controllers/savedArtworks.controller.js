@@ -8,18 +8,18 @@ import { User } from "../models/users.model.js"
 import { savedArtwork } from "../models/savedArtworks.model.js"
 
 
-const saveArtwork = asyncHandler( async(req,res) => {
+const saveArtwork = asyncHandler( async(req, res, next) => {
 
     const {artworkId} = req.params
     
     if(!artworkId){
-        throw new ApiError(400,"Artwork Id is missing!")
+        return next(new ApiError(400, "Artwork Id is missing!"))
     }
 
     const isArtwork = await Artwork.findById(artworkId)
 
     if(!isArtwork){
-        throw new ApiError(404,"Cannot save artwork, Artwork does not exist!")
+        return next(new ApiError(404, "Cannot save artwork, Artwork does not exist!"))
     }
 
     const artwork = await savedArtwork.create({
@@ -28,27 +28,27 @@ const saveArtwork = asyncHandler( async(req,res) => {
     })  
 
     if(!artwork){
-        throw new ApiError(500,"Something went wrong while saving artwork!")
+        return next(new ApiError(500, "Something went wrong while saving artwork!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,artwork,"Artwork saved successfully!"))
+    .json(new ApiResponse(201, artwork, "Artwork saved successfully!"))
 } )
 
 
-const unsaveArtwork = asyncHandler( async(req,res) => {
+const unsaveArtwork = asyncHandler( async(req, res, next) => {
 
     const {artworkId} = req.params
     
     if(!artworkId){
-        throw new ApiError(400,"Artwork Id is missing!")
+        return next(new ApiError(400, "Artwork Id is missing!"))
     }
 
     const isArtwork = await Artwork.findById(artworkId)
 
     if(!isArtwork){
-        throw new ApiError(404,"Cannot unsave artwork, Artwork does not exist!")
+        return next(new ApiError(404, "Cannot unsave artwork, Artwork does not exist!"))
     }
 
     const artwork = await savedArtwork.deleteOne({
@@ -57,17 +57,17 @@ const unsaveArtwork = asyncHandler( async(req,res) => {
     })
 
     if(artwork.deletedCount === 0){
-        throw new ApiError(500,"Something went wrong while unsaving artwork!")
+        return next(new ApiError(500, "Something went wrong while unsaving artwork!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,artwork,"Artwork unsaved successfully!"))
+    .json(new ApiResponse(200, artwork, "Artwork unsaved successfully!"))
 
 } )
 
 
-const getSavedArtworks = asyncHandler( async(req,res) => {
+const getSavedArtworks = asyncHandler( async(req, res, next) => {
 
     const savedArtworks = await User.aggregate([
 
@@ -116,16 +116,16 @@ const getSavedArtworks = asyncHandler( async(req,res) => {
     ])
 
     if(!savedArtworks[0]){
-        throw new ApiError(500,"Something went wrong while fetching saved artworks!")
+        return next(new ApiError(500, "Something went wrong while fetching saved artworks!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,savedArtworks[0],"Saved artworks fetched successfully!"))
+    .json(new ApiResponse(200, savedArtworks[0], "Saved artworks fetched successfully!"))
 
 } ) 
 
-export{
+export {
     saveArtwork,
     unsaveArtwork,
     getSavedArtworks

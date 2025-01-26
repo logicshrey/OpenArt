@@ -7,7 +7,7 @@ const verifyJwt = async (req,__,next) => {
         const token = req.cookies?.accessToken
 
         if(!token){
-           throw new ApiError(401,"Access Token not found, Unauthorized User!") 
+           return next(new ApiError(401,"Access Token not found, Unauthorized User!")) 
         }
 
         const decodedToken = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET)
@@ -15,7 +15,7 @@ const verifyJwt = async (req,__,next) => {
         const user = await User.findById(decodedToken?._id)
 
         if(!user){
-            throw new ApiError(401,"Invalid Access Token!")
+            return next( new ApiError(401,"Invalid Access Token!"))
         }
 
         req.user = user
@@ -23,7 +23,7 @@ const verifyJwt = async (req,__,next) => {
         
     } catch (error) {
       console.log("Error: ",error);
-      throw error   
+      next(error)   
     } 
 }
 

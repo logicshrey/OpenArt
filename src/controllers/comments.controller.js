@@ -10,24 +10,24 @@ import { Announcement } from "../models/announcements.model.js";
 
 // Artwork Comments
 
-const addCommentToArtwork = asyncHandler( async(req,res) => {
+const addCommentToArtwork = asyncHandler( async(req, res, next) => {
 
     const {artworkId} = req.params
 
     if(!artworkId){
-        throw new ApiError(400,"artworkId is required!")
+        return next(new ApiError(400, "artworkId is required!"))
     }
 
     const {content} = req.body
 
     if(!content){
-        throw new ApiError(400,"content of comment is required!")
+        return next(new ApiError(400, "content of comment is required!"))
     }
 
     const isArtwork = await Artwork.findById(artworkId)
 
     if(!isArtwork){
-        throw new ApiError(404,"Cannot add comment, Artwork does not exist!")
+        return next(new ApiError(404, "Cannot add comment, Artwork does not exist!"))
     }
 
     const comment = await Comment.create({
@@ -37,21 +37,21 @@ const addCommentToArtwork = asyncHandler( async(req,res) => {
     })
 
     if(!comment){
-        throw new ApiError(500,"Something went wrong while adding a comment!")
+        return next(new ApiError(500, "Something went wrong while adding a comment!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,comment,"Comment added successfully!"))
+    .json(new ApiResponse(201, comment, "Comment added successfully!"))
 
 } )
 
-const getCommentsOfArtwork = asyncHandler( async(req,res) => {
+const getCommentsOfArtwork = asyncHandler( async(req, res, next) => {
 
     const {artworkId} = req.params
 
     if(!artworkId){
-        throw new ApiError(400,"artworkId is required!")
+        return next(new ApiError(400, "artworkId is required!"))
     }
 
     const comments = await Artwork.aggregate([
@@ -123,35 +123,35 @@ const getCommentsOfArtwork = asyncHandler( async(req,res) => {
     ])
 
     if(!comments[0]){
-        throw new ApiError(500,"Something went wrong while fetching artwork comments!")
+        return next(new ApiError(500, "Something went wrong while fetching artwork comments!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,comments[0],"Artwork comments fetched successfully"))
+    .json(new ApiResponse(200, comments[0], "Artwork comments fetched successfully"))
 
 } )
 
 // Artblog Comments
 
-const addCommentToArtblog = asyncHandler( async(req,res) => {
+const addCommentToArtblog = asyncHandler( async(req, res, next) => {
 
     const {artblogId} = req.params
 
     if(!artblogId){
-        throw new ApiError(400,"artblogId is required!")
+        return next(new ApiError(400, "artblogId is required!"))
     }
 
     const {content} = req.body
 
     if(!content){
-        throw new ApiError(400,"content of comment is required!")
+        return next(new ApiError(400, "content of comment is required!"))
     }
 
     const isArtblog = await Artblog.findById(artblogId)
 
     if(!isArtblog){
-        throw new ApiError(404,"Cannot add comment, Artblog does not exist!")
+        return next(new ApiError(404, "Cannot add comment, Artblog does not exist!"))
     }
 
     const comment = await Comment.create({
@@ -161,21 +161,21 @@ const addCommentToArtblog = asyncHandler( async(req,res) => {
     })
 
     if(!comment){
-        throw new ApiError(500,"Something went wrong while adding a comment!")
+        return next(new ApiError(500, "Something went wrong while adding a comment!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,comment,"Comment added successfully!"))
+    .json(new ApiResponse(201, comment, "Comment added successfully!"))
 
 } )
 
-const getCommentsOfArtblog = asyncHandler( async(req,res) => {
+const getCommentsOfArtblog = asyncHandler( async(req, res, next) => {
 
     const {artblogId} = req.params
 
     if(!artblogId){
-        throw new ApiError(400,"artblogId is required!")
+        return next(new ApiError(400, "artblogId is required!"))
     }
 
     const comments = await Artblog.aggregate([
@@ -247,35 +247,35 @@ const getCommentsOfArtblog = asyncHandler( async(req,res) => {
     ])
 
     if(!comments[0]){
-        throw new ApiError(500,"Something went wrong while fetching artblog comments!")
+        return next(new ApiError(500, "Something went wrong while fetching artblog comments!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,comments[0],"Artblog comments fetched successfully"))
+    .json(new ApiResponse(200, comments[0], "Artblog comments fetched successfully"))
 
 } )
 
 // Announcement Comments
 
-const addCommentToAnnouncement = asyncHandler( async(req,res) => {
+const addCommentToAnnouncement = asyncHandler( async(req, res, next) => {
 
     const {announcementId} = req.params
 
     if(!announcementId){
-        throw new ApiError(400,"announcementId is required!")
+        return next(new ApiError(400, "announcementId is required!"))
     }
 
     const {content} = req.body
 
     if(!content){
-        throw new ApiError(400,"content of comment is required!")
+        return next(new ApiError(400, "content of comment is required!"))
     }
 
     const isAnnouncement = await Announcement.findById(announcementId)
 
     if(!isAnnouncement){
-        throw new ApiError(404,"Cannot add comment, Announcement does not exist!")
+        return next(new ApiError(404, "Cannot add comment, Announcement does not exist!"))
     }
 
     const comment = await Comment.create({
@@ -285,21 +285,21 @@ const addCommentToAnnouncement = asyncHandler( async(req,res) => {
     })
 
     if(!comment){
-        throw new ApiError(500,"Something went wrong while adding a comment!")
+        return next(new ApiError(500, "Something went wrong while adding a comment!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,comment,"Comment added successfully!"))
+    .json(new ApiResponse(201, comment, "Comment added successfully!"))
 
 } )
 
-const getCommentsOfAnnouncement = asyncHandler( async(req,res) => {
+const getCommentsOfAnnouncement = asyncHandler( async(req, res, next) => {
 
     const {announcementId} = req.params
 
     if(!announcementId){
-        throw new ApiError(400,"announcementId is required!")
+        return next(new ApiError(400, "announcementId is required!"))
     }
 
     const comments = await Announcement.aggregate([
@@ -371,34 +371,34 @@ const getCommentsOfAnnouncement = asyncHandler( async(req,res) => {
     ])
 
     if(!comments[0]){
-        throw new ApiError(500,"Something went wrong while fetching announcement comments!")
+        return next(new ApiError(500, "Something went wrong while fetching announcement comments!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,comments[0],"Announcement comments fetched successfully"))
+    .json(new ApiResponse(200, comments[0], "Announcement comments fetched successfully"))
 
 } )
 
 // Delete Comments
 
-const deleteComment = asyncHandler( async(req,res) => {
+const deleteComment = asyncHandler( async(req, res, next) => {
 
     const {commentId} = req.params
 
     if(!commentId){
-        throw new ApiError("Comment Id is required!")
+        return next(new ApiError(400, "Comment Id is required!"))
     }
 
     const deletedComment = await Comment.findByIdAndDelete(commentId)
 
     if(!deletedComment){
-        throw new ApiError("Something went wrong while deleting comment!")
+        return next(new ApiError(500, "Something went wrong while deleting comment!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,deletedComment,"Comment deleted successfully!"))
+    .json(new ApiResponse(200, deletedComment, "Comment deleted successfully!"))
 } )
 
 export {

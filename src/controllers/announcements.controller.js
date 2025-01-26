@@ -7,14 +7,14 @@ import mongoose from "mongoose";
 import { User } from "../models/users.model.js"
 
 
-const createAnnouncement = asyncHandler( async(req,res) => {
+const createAnnouncement = asyncHandler( async(req, res, next) => {
 
-    const { title,description,category } = req.body
+    const { title, description, category } = req.body
 
-    if([title,description,category].some((ele)=>{
-       return ele?.trim===""  
+    if([title, description, category].some((ele) => {
+       return ele?.trim() === ""  
     })){
-       throw new ApiError(400,"Required fields are missing!")
+       return next(new ApiError(400, "Required fields are missing!"))
     }
 
     const contentImageLocalPath = req.file?.path
@@ -26,32 +26,32 @@ const createAnnouncement = asyncHandler( async(req,res) => {
         description,
         category,
         owner: req.user?._id,
-        image: contentImage?contentImage.url:null
+        image: contentImage ? contentImage.url : null
     })
 
     if(!announcement){
-        throw new ApiError(500,"Something went wrong while creating new announcement!")
+        return next(new ApiError(500, "Something went wrong while creating new announcement!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,announcement,"New Announcement Created Successfully!"))
+    .json(new ApiResponse(201, announcement, "New Announcement Created Successfully!"))
 } )
 
-const editAnnouncement = asyncHandler( async(req,res) => {
+const editAnnouncement = asyncHandler( async(req, res, next) => {
 
     const {announcementId} = req.params
     
     if(!announcementId){
-        throw new ApiError(400,"Announcement Id is missing!")
+        return next(new ApiError(400, "Announcement Id is missing!"))
     }
 
-    const { title,description,category } = req.body
+    const { title, description, category } = req.body
 
-    if([title,description,category].some((ele)=>{
-        return ele?.trim===""  
+    if([title, description, category].some((ele) => {
+        return ele?.trim() === ""  
      })){
-        throw new ApiError(400,"Required fields are missing!")
+        return next(new ApiError(400, "Required fields are missing!"))
      }
      
      const contentImageLocalPath = req.file?.path
@@ -60,61 +60,60 @@ const editAnnouncement = asyncHandler( async(req,res) => {
      
      const tempAnnouncement = await Announcement.findById(announcementId)
 
-     await destroyOnCloudinary(tempAnnouncement.image)
+     if (tempAnnouncement.image) {
+        await destroyOnCloudinary(tempAnnouncement.image)
+     }
 
-     const announcement = await Announcement.findByIdAndUpdate(announcementId,{
-        $set:{
+     const announcement = await Announcement.findByIdAndUpdate(announcementId, {
+        $set: {
             title,
             description,
             category,
-            image: contentImage?contentImage.url:null
+            image: contentImage ? contentImage.url : null
         }
      },
      {
-        new:true
+        new: true
      })
 
      if(!announcement){
-        throw new ApiError(404,"Announcement Not Found!")
+        return next(new ApiError(404, "Announcement Not Found!"))
      }
      
      res
-     .json(new ApiResponse(200,announcement,"Announcement Edited Successfully!"))
+     .status(200)
+     .json(new ApiResponse(200, announcement, "Announcement Edited Successfully!"))
 } )
 
-const deleteAnnouncement = asyncHandler( async(req,res) => {
+const deleteAnnouncement = asyncHandler( async(req, res, next) => {
     
     const {announcementId} = req.params
     
     if(!announcementId){
-        throw new ApiError(400,"Announcement Id is missing!")
+        return next(new ApiError(400, "Announcement Id is missing!"))
     }
 
     const announcement = await Announcement.findByIdAndDelete(announcementId)
 
     if(!announcement){
-        throw new ApiError(500,"Something went wrong while deleting announcement!")
+        return next(new ApiError(500, "Something went wrong while deleting announcement!"))
     }
     
-    // console.log(announcement.image);
-    
-    if((announcement.image) != null){
+    if (announcement.image) {
         await destroyOnCloudinary(announcement.image)
-    } 
+    }
 
     res
     .status(200)
-    .json(new ApiResponse(200,announcement,"Announcement deleted successfully!"))
+    .json(new ApiResponse(200, announcement, "Announcement deleted successfully!"))
 } )
 
-const getAnnouncement = asyncHandler( async(req,res) => {
+const getAnnouncement = asyncHandler( async(req, res, next) => {
 
     const {announcementId} = req.params
-
-    // const {userId} = req.user?._id
     
     if(!announcementId){
-        throw new ApiError(400,"Announcement Id is missing!")
+        return next(new ApiError(400, "Announcement Id is missing!"))
     }
 
     const announcementDetails = await Announcement.aggregate([
@@ -178,7 +177,7 @@ const getAnnouncement = asyncHandler( async(req,res) => {
                 },
                 isLiked:{
                     $cond:{
-                        if: { $in: [req.user._id,"$likes.likedBy"] },
+                        if: { $in: [req.user._id, "$likes.likedBy"] },
                         then: true,
                         else: false
                     }
@@ -204,7 +203,7 @@ const getAnnouncement = asyncHandler( async(req,res) => {
     ])
 
     if(!announcementDetails[0]){
-        throw new ApiError(500,"Something went wrong while fetching announcement details!")
+        return next(new ApiError(500, "Something went wrong while fetching announcement details!"))
     }
     
     const announcement = await User.aggregate([
@@ -225,7 +224,7 @@ const getAnnouncement = asyncHandler( async(req,res) => {
             $addFields:{
                 isSaved:{
                     $cond:{
-                        if: { $in: [new mongoose.Types.ObjectId(announcementId),"$savedannouncements.announcement"] },
+                        if: { $in: [new mongoose.Types.ObjectId(announcementId), "$savedannouncements.announcement"] },
                         then: true,
                         else: false
                     }
@@ -239,16 +238,15 @@ const getAnnouncement = asyncHandler( async(req,res) => {
         }
     ])
     
-
     announcementDetails[0].isSaved = announcement[0].isSaved
 
     res
     .status(200)
-    .json(new ApiResponse(200,announcementDetails[0],"Announcement details fetched successfully!"))
+    .json(new ApiResponse(200, announcementDetails[0], "Announcement details fetched successfully!"))
 } )
 
 
-const getAnnouncementsByContentChoice = asyncHandler ( async(req,res) =>  {
+const getAnnouncementsByContentChoice = asyncHandler ( async(req, res, next) =>  {
 
     const announcements = await User.aggregate([
 
@@ -314,12 +312,12 @@ const getAnnouncementsByContentChoice = asyncHandler ( async(req,res) =>  {
     ])
      
     if(!announcements[0]){
-        throw new ApiError(500,"Something went wrong while fetching the announcements!")
+        return next(new ApiError(500, "Something went wrong while fetching the announcements!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,announcements[0],"Announcements fetched successfully!"))
+    .json(new ApiResponse(200, announcements[0], "Announcements fetched successfully!"))
 
 } )
 
@@ -330,4 +328,3 @@ export {
     getAnnouncement,
     getAnnouncementsByContentChoice
 }
-

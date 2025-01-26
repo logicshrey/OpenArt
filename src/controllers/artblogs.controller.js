@@ -7,14 +7,14 @@ import mongoose from "mongoose";
 import { User } from "../models/users.model.js"
 
 
-const createArtblog = asyncHandler( async(req,res) => {
+const createArtblog = asyncHandler( async(req, res, next) => {
 
-    const { title,content,category } = req.body
+    const { title, content, category } = req.body
 
-    if([title,content,category].some((ele)=>{
-       return ele?.trim===""  
+    if([title, content, category].some((ele) => {
+       return ele?.trim() === ""  
     })){
-       throw new ApiError(400,"Required fields are missing!")
+       return next(new ApiError(400, "Required fields are missing!"))
     }
 
     const artblog = await Artblog.create({
@@ -25,76 +25,75 @@ const createArtblog = asyncHandler( async(req,res) => {
     })
 
     if(!artblog){
-        throw new ApiError(500,"Something went wrong while creating new artblog!")
+        return next(new ApiError(500, "Something went wrong while creating new artblog!"))
     }
 
     res
     .status(201)
-    .json(new ApiResponse(201,artblog,"New Artblog Created Successfully!"))
+    .json(new ApiResponse(201, artblog, "New Artblog Created Successfully!"))
 } )
 
-const editArtblog = asyncHandler( async(req,res) => {
+const editArtblog = asyncHandler( async(req, res, next) => {
 
     const {artblogId} = req.params
     
     if(!artblogId){
-        throw new ApiError(400,"Artblog Id is missing!")
+        return next(new ApiError(400, "Artblog Id is missing!"))
     }
 
-    const { title,content,category } = req.body
+    const { title, content, category } = req.body
 
-    if([title,content,category].some((ele)=>{
-        return ele?.trim===""  
+    if([title, content, category].some((ele) => {
+        return ele?.trim() === ""  
      })){
-        throw new ApiError(400,"Required fields are missing!")
+        return next(new ApiError(400, "Required fields are missing!"))
      }
     
-     const artblog = await Artblog.findByIdAndUpdate(artblogId,{
-        $set:{
+     const artblog = await Artblog.findByIdAndUpdate(artblogId, {
+        $set: {
             title,
             content,
             category
         }
      },
      {
-        new:true
+        new: true
      })
 
      if(!artblog){
-        throw new ApiError(404,"Artblog Not Found!")
+        return next(new ApiError(404, "Artblog Not Found!"))
      }
      
      res
-     .json(new ApiResponse(200,artblog,"Artblog Edited Successfully!"))
+     .status(200)
+     .json(new ApiResponse(200, artblog, "Artblog Edited Successfully!"))
 } )
 
-const deleteArtblog = asyncHandler( async(req,res) => {
+const deleteArtblog = asyncHandler( async(req, res, next) => {
     
     const {artblogId} = req.params
     
     if(!artblogId){
-        throw new ApiError(400,"Artblog Id is missing!")
+        return next(new ApiError(400, "Artblog Id is missing!"))
     }
 
     const artblog = await Artblog.findByIdAndDelete(artblogId)
 
     if(!artblog){
-        throw new ApiError(500,"Something went wrong while deleting artblog!")
+        return next(new ApiError(500, "Something went wrong while deleting artblog!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,artblog,"Artblog deleted successfully!"))
+    .json(new ApiResponse(200, artblog, "Artblog deleted successfully!"))
 } )
 
-const getArtblog = asyncHandler( async(req,res) => {
+const getArtblog = asyncHandler( async(req, res, next) => {
 
     const {artblogId} = req.params
-
-    // const {userId} = req.user?._id
     
     if(!artblogId){
-        throw new ApiError(400,"Artblog Id is missing!")
+        return next(new ApiError(400, "Artblog Id is missing!"))
     }
 
     const artblogDetails = await Artblog.aggregate([
@@ -158,7 +157,7 @@ const getArtblog = asyncHandler( async(req,res) => {
                 },
                 isLiked:{
                     $cond:{
-                        if: { $in: [req.user._id,"$likes.likedBy"] },
+                        if: { $in: [req.user._id, "$likes.likedBy"] },
                         then: true,
                         else: false
                     }
@@ -168,9 +167,8 @@ const getArtblog = asyncHandler( async(req,res) => {
         {
             $project:{
                 _id:1,
-                contentFile:1,
                 title:1,
-                description:1,
+                content:1,
                 category:1,
                 createdAt:1,
                 updatedAt:1,
@@ -184,51 +182,50 @@ const getArtblog = asyncHandler( async(req,res) => {
     ])
 
     if(!artblogDetails[0]){
-        throw new ApiError(500,"Something went wrong while fetching artblog details!")
+        return next(new ApiError(500, "Something went wrong while fetching artblog details!"))
     }
 
     const artblog = await User.aggregate([
-            {
-                $match:{
-                    _id: new mongoose.Types.ObjectId(req.user._id)
-                }
-            },
-            {
-                $lookup:{
-                    from:"savedartblogs",
-                    localField:"_id",
-                    foreignField:"owner",
-                    as:"savedartblogs"
-                }
-            },
-            {
-                $addFields:{
-                    isSaved:{
-                        $cond:{
-                            if: { $in: [new mongoose.Types.ObjectId(artblogId),"$savedartblogs.artblog"] },
-                            then: true,
-                            else: false
-                        }
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup:{
+                from:"savedartblogs",
+                localField:"_id",
+                foreignField:"owner",
+                as:"savedartblogs"
+            }
+        },
+        {
+            $addFields:{
+                isSaved:{
+                    $cond:{
+                        if: { $in: [new mongoose.Types.ObjectId(artblogId), "$savedartblogs.artblog"] },
+                        then: true,
+                        else: false
                     }
                 }
-            },
-            {
-                $project:{
-                    isSaved:1
-                }
             }
-        ])
-        
+        },
+        {
+            $project:{
+                isSaved:1
+            }
+        }
+    ])
     
-        artblogDetails[0].isSaved = artblog[0].isSaved
+    artblogDetails[0].isSaved = artblog[0].isSaved
 
     res
     .status(200)
-    .json(new ApiResponse(200,artblogDetails[0],"Artblog details fetched successfully!"))
+    .json(new ApiResponse(200, artblogDetails[0], "Artblog details fetched successfully!"))
 } )
 
 
-const getArtblogsByContentChoice = asyncHandler ( async(req,res) =>  {
+const getArtblogsByContentChoice = asyncHandler ( async(req, res, next) =>  {
 
     const artblogs = await User.aggregate([
 
@@ -294,12 +291,12 @@ const getArtblogsByContentChoice = asyncHandler ( async(req,res) =>  {
     ])
      
     if(!artblogs[0]){
-        throw new ApiError(500,"Something went wrong while fetching the artblogs!")
+        return next(new ApiError(500, "Something went wrong while fetching the artblogs!"))
     }
 
     res
     .status(200)
-    .json(new ApiResponse(200,artblogs[0],"Artblogs fetched successfully!"))
+    .json(new ApiResponse(200, artblogs[0], "Artblogs fetched successfully!"))
 
 } )
 
@@ -310,4 +307,3 @@ export {
     getArtblog,
     getArtblogsByContentChoice
 }
-
